@@ -10,11 +10,16 @@ document.getElementById("login-form").addEventListener("submit", async function 
     });
   
     if (!res.ok) {
-      alert("Invalid credentials");
+      document.getElementById("error-msg").innerText = "Invalid credentials.";
       return;
     }
   
-    const data = await res.json();
-    localStorage.setItem("jwt", data);
+    const jwt = await res.text();
+    localStorage.setItem("jwt", jwt);
     window.location.href = "profile.html";
   });
+  
+  function logout() {
+    localStorage.removeItem("jwt");
+    window.location.href = "index.html";
+  }

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Profile</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <h1>Welcome, <span id="username"></span></h1>
+  <button onclick="logout()">Logout</button>
+
+  <section id="info">
+    <p>Total XP: <span id="xp-total"></span></p>
+    <p>Audit Ratio: <span id="audit-ratio"></span></p>
+  </section>
+
+  <section id="graphs">
+    <h2>XP Progress</h2>
+    <div id="xp-graph"></div>
+
+    <h2>Pass/Fail Ratio</h2>
+    <div id="result-graph"></div>
+  </section>
+
+  <script src="js/graphql.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

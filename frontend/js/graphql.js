@@ -1,14 +1,5 @@
-async function fetchXP() {
+async function graphqlQuery(query) {
     const jwt = localStorage.getItem("jwt");
-  
-    const query = `
-      {
-        transaction(where: {type: {_eq: "xp"}}) {
-          amount
-          createdAt
-        }
-      }
-    `;
   
     const res = await fetch("https://learn.reboot01.com/api/graphql-engine/v1/graphql", {
       method: "POST",
@@ -20,15 +11,6 @@ async function fetchXP() {
     });
   
     const data = await res.json();
-    return data.data.transaction;
+    return data.data;
   }
-
-
-  const res = await fetch("/graphql", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ query })
-  });
+  
