@@ -1,5 +1,5 @@
 import { getUserInfo } from './graphql.js';
-import { createProfileHeader, formatXP } from './graphs.js';
+import { createProfileHeader, formatXP, auditsFiller, FillProgressGraph, FillSkillsGraph } from './graphs.js';
 
 const signinURL = 'https://learn.reboot01.com/api/auth/signin';
 
@@ -13,7 +13,7 @@ const extractUserId = token => {
 
 const updateUI = (show = true) => {
   const toggle = (id, add) => document.getElementById(id)?.classList[add ? 'add' : 'remove']('hidden');
-  toggle('login-form', !show);
+  toggle('login-form', show);
   ['user-info', 'xp-progress-container', 'skills-container', 'user-audits-container'].forEach(id => toggle(id, !show));
 };
 
