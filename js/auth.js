@@ -93,26 +93,85 @@ async function graphqlQuery(query, variables = {}) {
   return res.json();
 }
 
-async function fetchXPProgress() {
-  const user = (await getUserInfo(localStorage.getItem('jwt')))[0];
-  const q = `query ($userId: Int!) {
-    transaction(where: {
-      _and: [
-        { userId: { _eq: $userId } },
-        { type: { _eq: "xp" } },
-        { path: { _like: "/bahrain/bh-module%" } },
-        { _not: { path: { _like: "/bahrain/bh-module/piscine-js%" } } },
-        { _not: { path: { _like: "/bahrain/bh-module/checkpoint%" } } }
-      ]}, order_by: { createdAt: asc }) {
-      path amount createdAt object { name }
+/**
+ * Fetch the user’s XP history from GraphQL,
+ * cache the most‑recent project in localStorage,
+ * and pass the full transaction list to your
+ * progress‑charting function.
+ *
+ * Drop‑in replacement for the old fetchXPProgress().
+ */
+export async function fetchXPProgress() {
+  try {
+    /* -----------------------------------------------------------
+       1.  Get the current user
+    ----------------------------------------------------------- */
+    const jwt = localStorage.getItem('jwt');
+    if (!jwt) {
+      console.error('❌  No JWT token found in localStorage.');
+      return;
     }
-  }`;
-  const result = await graphqlQuery(q, { userId: user.id });
-  const txs = result.data.transaction || [];
-  const latest = [...txs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
-  localStorage.setItem('LatestProject', latest?.path || '');
-  FillProgressGraph(txs);
+
+    // getUserInfo should return an array; grab the first element
+    const userInfo = await getUserInfo(jwt);
+    if (!Array.isArray(userInfo) || userInfo.length === 0) {
+      console.error('❌  getUserInfo() returned no data.');
+      return;
+    }
+    const user = userInfo[0];
+
+    /* -----------------------------------------------------------
+       2.  Build the GraphQL query
+           (plain template string – no special tagging required)
+    ----------------------------------------------------------- */
+    const query = `
+      query GetUserXPHistory($userId: Int!) {
+        transaction(
+          where: {
+            _and: [
+              { userId: { _eq: $userId } }
+              { type:  { _eq: "xp" } }
+              { event: { path: { _eq: "/bahrain/bh-module" } } }
+            ]
+          }
+          order_by: { createdAt: asc }
+        ) {
+          amount
+          createdAt
+          object {
+            name
+          }
+        }
+      }
+    `;
+
+    /* -----------------------------------------------------------
+       3.  Execute the query
+    ----------------------------------------------------------- */
+    const result = await graphqlQuery(query, { userId: user.id });
+    const transactions = result?.data?.transaction ?? [];
+
+    console.log('✅ XP transactions:', transactions);
+
+    /* -----------------------------------------------------------
+       4.  Cache the latest project (if any)
+    ----------------------------------------------------------- */
+    if (transactions.length > 0) {
+      const latest = [...transactions]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+
+      localStorage.setItem('LatestProject', latest?.object?.name || '');
+    }
+
+    /* -----------------------------------------------------------
+       5.  Update the UI / chart
+    ----------------------------------------------------------- */
+    FillProgressGraph(transactions);
+  } catch (err) {
+    console.error('❌  fetchXPProgress() failed:', err);
+  }
 }
+
 
 async function fetchSkills() {
   const user = (await getUserInfo(localStorage.getItem('jwt')))[0];

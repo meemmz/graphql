@@ -140,52 +140,156 @@ export function auditsFiller(data) {
   }
 }
 
-export function FillProgressGraph(transactions) {
-  const data = transactions.map(tx => ({
-    date: new Date(tx.createdAt),
-    xp: tx.amount
-  })).sort((a, b) => a.date - b.date);
+export function FillProgressGraph(progressInfo) {
+    const XPOverTime = document.getElementById("XPOverTime");
+    if (!XPOverTime || !progressInfo.length) return;
+    
+    // Clear existing content first to prevent duplicates
+    XPOverTime.innerHTML = "";
+    
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "0 0 800 400");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.style.overflow = "visible";
+    
+    const padding = 60;
+    const width = 800 - 2 * padding;
+    const height = 400 - 2 * padding;
 
-  let cumulativeXP = 0;
-  const cumulativeData = data.map(d => {
-    cumulativeXP += d.xp;
-    return { date: d.date, xp: cumulativeXP };
-  });
+    // Cumulative XP Calculation
+    let cumulativeXP = 0;
+    const cumulativeData = progressInfo.map((point) => ({
+        createdAt: new Date(point.createdAt),
+        amount: (cumulativeXP += point.amount),
+        projectName: point.object.name,
+    }));
 
-  const margin = { top: 20, right: 30, bottom: 30, left: 60 },
-    width = 700 - margin.left - margin.right,
-    height = 300 - margin.top - margin.bottom;
+    // Extracting Dates and XP max and min
+    const dates = progressInfo.map((p) => new Date(p.createdAt).getTime());
+    const xMin = new Date(Math.min(...dates));
+    const xMax = new Date(Math.max(...dates));
+    const yMin = 0;
+    const yMax = Math.max(...cumulativeData.map((p) => p.amount));
+    
+    // Drawing the Axes
+    const xAxis = document.createElementNS(svgNS, "line");
+    xAxis.setAttribute("x1", padding);
+    xAxis.setAttribute("y1", height + padding);
+    xAxis.setAttribute("x2", width + padding);
+    xAxis.setAttribute("y2", height + padding);
+    xAxis.setAttribute("stroke", "#ffffff");
+    svg.appendChild(xAxis);
 
-  const svg = d3.select("#XPOverTime")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+    const yAxis = document.createElementNS(svgNS, "line");
+    yAxis.setAttribute("x1", padding);
+    yAxis.setAttribute("y1", padding);
+    yAxis.setAttribute("x2", padding);
+    yAxis.setAttribute("y2", height + padding);
+    yAxis.setAttribute("stroke", "#ffffff");
+    svg.appendChild(yAxis);
 
-  const x = d3.scaleTime()
-    .domain(d3.extent(cumulativeData, d => d.date))
-    .range([0, width]);
-  svg.append("g")
-    .attr("transform", `translate(0, ${height})`)
-    .call(d3.axisBottom(x));
+    // Adding Y-Axis Labels and Grid Lines
+    for (let i = 0; i <= 5; i++) {
+        const y = height + padding - (i * height) / 5;
+        const value = Math.round((yMax * i) / 5);
+        const label = document.createElementNS(svgNS, "text");
+        label.setAttribute("x", padding - 10);
+        label.setAttribute("y", y);
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("fill", "#ffffff");
+        label.setAttribute("class", "axis-label");
+        label.textContent = formatXP(value) + " KB";
+        svg.appendChild(label);
 
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(cumulativeData, d => d.xp)])
-    .range([height, 0]);
-  svg.append("g")
-    .call(d3.axisLeft(y).tickFormat(d => `${(d / 1000).toFixed(0)}k`));
+        const gridLine = document.createElementNS(svgNS, "line");
+        gridLine.setAttribute("x1", padding);
+        gridLine.setAttribute("y1", y);
+        gridLine.setAttribute("x2", width + padding);
+        gridLine.setAttribute("y2", y);
+        gridLine.setAttribute("stroke", "rgba(255, 255, 255, 0.1)");
+        gridLine.setAttribute("class", "grid-line");
+        svg.appendChild(gridLine);
+    }
 
-  svg.append("path")
-    .datum(cumulativeData)
-    .attr("fill", "none")
-    .attr("stroke", "#69b3a2")
-    .attr("stroke-width", 2)
-    .attr("d", d3.line()
-      .x(d => x(d.date))
-      .y(d => y(d.xp))
-    );
+    // Adding X-Axis Date Labels
+    const numDateLabels = 5;
+    for (let i = 0; i <= numDateLabels; i++) {
+        const x = padding + (i * width) / numDateLabels;
+        const date = new Date(xMin.getTime() + (xMax - xMin) * (i / numDateLabels));
+        const label = document.createElementNS(svgNS, "text");
+        label.setAttribute("x", x);
+        label.setAttribute("y", height + padding + 20);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("fill", "#ffffff");
+        label.setAttribute("class", "axis-label");
+        label.textContent = date.toLocaleDateString();
+        svg.appendChild(label);
+    }
+
+    // Plotting Data Points
+    cumulativeData.forEach((point, index) => {
+        const x = padding + ((point.createdAt - xMin) / (xMax - xMin)) * width;
+        const y = height + padding - ((point.amount - yMin) / (yMax - yMin)) * height;
+
+        if (index > 0) {
+            const prevPoint = cumulativeData[index - 1];
+            const prevX = padding + ((prevPoint.createdAt - xMin) / (xMax - xMin)) * width;
+            const prevY = height + padding - ((prevPoint.amount - yMin) / (yMax - yMin)) * height;
+            const line = document.createElementNS(svgNS, "line");
+            line.setAttribute("x1", prevX);
+            line.setAttribute("y1", prevY);
+            line.setAttribute("x2", x);
+            line.setAttribute("y2", y);
+            line.setAttribute("stroke", "#8e24aa");
+            line.setAttribute("stroke-width", "2");
+            line.setAttribute("class", "xp-line animate-line");
+            svg.appendChild(line);
+        }
+
+        // A circle element is created for each data point
+        const dot = document.createElementNS(svgNS, "circle");
+        dot.setAttribute("cx", x);
+        dot.setAttribute("cy", y);
+        dot.setAttribute("r", 4);
+        dot.setAttribute("fill", "#8e24aa");
+        dot.setAttribute("class", "xp-dot animate-dot");
+        dot.style.animationDelay = `${index * 0.01}s`;
+
+        dot.addEventListener("mouseover", (e) => {
+            const tooltip = document.createElementNS(svgNS, "text");
+            tooltip.setAttribute("x", x);
+            tooltip.setAttribute("y", y - 20);
+            tooltip.setAttribute("text-anchor", "middle");
+            tooltip.setAttribute("fill", "#ffffff");
+            tooltip.setAttribute("class", "tooltip");
+            tooltip.textContent = formatXP(point.amount) + " KB";
+            svg.appendChild(tooltip);
+
+            const tooltip2 = document.createElementNS(svgNS, "text");
+            tooltip2.setAttribute("x", x);
+            tooltip2.setAttribute("y", y - 5);
+            tooltip2.setAttribute("text-anchor", "middle");
+            tooltip2.setAttribute("fill", "#ffffff");
+            tooltip2.setAttribute("class", "tooltip2");
+            tooltip2.textContent = point.projectName;
+            svg.appendChild(tooltip2);
+        });
+
+        // Removing Tooltips event
+        dot.addEventListener("mouseout", () => {
+            const tooltip = svg.querySelector(".tooltip");
+            if (tooltip) tooltip.remove();
+            const tooltip2 = svg.querySelector(".tooltip2");
+            if (tooltip2) tooltip2.remove();
+        });
+
+        svg.appendChild(dot);
+    });
+
+    XPOverTime.appendChild(svg);
 }
+
 
 export function FillSkillsGraph(skills) {
   const technicalSkills = skills.filter(s => ['skill_go', 'skill_js', 'skill_html', 'skill_css', 'skill_unix', 'skill_tcp'].includes(s.type));
