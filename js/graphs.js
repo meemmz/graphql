@@ -300,15 +300,20 @@ export function FillSkillsGraph(skills) {
 }
 
 function createRadarChart(containerId, data) {
+    const container = d3.select(containerId);
+
+    // 🧼 Clear previous chart content to avoid duplicates
+    container.selectAll("*").remove();
+
     if (!data || data.length === 0) {
-        d3.select(containerId).append("p").text("No data available.");
+        container.append("p").text("No data available.");
         return;
     }
 
     const width = 300, height = 300, margin = 40;
     const radius = Math.min(width, height) / 2 - margin;
 
-    const svg = d3.select(containerId).append("svg")
+    const svg = container.append("svg")
         .attr("width", width)
         .attr("height", height)
         .append("g")
@@ -337,7 +342,7 @@ function createRadarChart(containerId, data) {
         .style('fill-opacity', 0.7);
     
     const axisGrid = svg.append("g").attr("class", "axis-grid");
-    
+
     axisGrid.selectAll(".levels")
        .data(d3.range(1, 4).reverse())
        .enter()
