@@ -373,3 +373,83 @@ svg {
 .hidden {
   display: none !important;
 }
+
+/* Login Form Styles */
+#login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  margin: 2rem auto;
+  gap: 15px;
+  padding: 30px;
+  background: #fcfaff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--light-border);
+}
+
+#login-form h1 {
+  text-align: center;
+  color: var(--text-color);
+  margin-bottom: 20px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#login-form input {
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 2px solid var(--light-border);
+  font-size: 15px;
+  font-family: var(--font-main);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#login-form input:focus {
+  outline: none;
+  border-color: #8e24aa;
+  box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.1);
+}
+
+#login-form input::placeholder {
+  color: #999;
+}
+
+#login-form button {
+  background-image: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 10px;
+}
+
+#login-form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(142, 36, 170, 0.3);
+}
+
+#login-form button:active {
+  transform: translateY(0);
+}
+
+#login-form .error {
+  color: #e53935;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
